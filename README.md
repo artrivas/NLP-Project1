@@ -3,7 +3,10 @@
 This project compares DistilBERT and BERT-base for text classification on AG News, SST-2, and Yelp Review Full.
 
 Day 1 focused on reproducible project setup, dataset loading, and tokenization.
-Day 2 adds DistilBERT baseline fine-tuning only. BERT comparison, ablations, and the final report are intentionally not implemented yet.
+Day 2 adds DistilBERT baseline fine-tuning.
+Day 3 adds DistilBERT-only ablations.
+Day 4 adds the final best-DistilBERT vs BERT-base comparison.
+Day 5 adds result aggregation, figures, and report-ready tables without training.
 
 ## Project Structure
 
@@ -205,3 +208,60 @@ results/
 ```
 
 Debug-fast results are only for verifying code correctness. Trust the final comparison only after running full-run experiments on the target RTX 4090.
+
+## Day 5 Results Summary
+
+Day 5 does not train models and does not load checkpoints. It only reads existing CSV/JSON outputs from previous days and generates tables and figures for the README and final technical report.
+
+Generate all result summaries:
+
+```bash
+python -m src.make_results_summary
+```
+
+Run individual steps if needed:
+
+```bash
+python -m src.aggregate_results
+python -m src.plot_results
+```
+
+Generated tables:
+
+```text
+results/tables/
+├── final_performance_table.csv
+├── final_performance_table.md
+├── final_efficiency_table.csv
+├── final_efficiency_table.md
+├── ablation_summary_table.csv
+├── ablation_summary_table.md
+├── best_distilbert_table.csv
+└── best_distilbert_table.md
+```
+
+Generated figures:
+
+```text
+results/figures/
+├── bubble_params_accuracy_combined.png
+├── bubble_params_accuracy_ag_news.png
+├── bubble_params_accuracy_sst2.png
+├── bubble_params_accuracy_yelp_review_full.png
+├── f1_comparison_by_dataset.png
+├── latency_comparison_by_dataset.png
+├── gpu_memory_comparison_by_dataset.png
+├── loss_curves_ag_news.png
+├── loss_curves_sst2.png
+└── loss_curves_yelp_review_full.png
+```
+
+Figure guide:
+
+- Bubble plots show parameter count in millions versus accuracy. Bubble size uses latency when available, otherwise GPU memory.
+- Loss curves show Trainer step versus training and validation loss for BERT-base and the selected best DistilBERT configuration when logs are available.
+- Bar plots compare macro F1, latency, and GPU memory by dataset and model/configuration.
+
+Debug-fast outputs are useful for checking that the reporting pipeline works, but they are not valid evidence for final conclusions. Use full-run outputs from the RTX 4090 for the final report.
+
+Commit generated summary artifacts such as `results/tables/*.csv`, `results/tables/*.md`, `results/figures/*.png`, and `results/README.md`. Do not commit large checkpoints, raw Trainer checkpoint directories, model weight files, caches, or W&B logs.

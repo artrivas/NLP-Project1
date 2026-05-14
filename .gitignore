@@ -17,6 +17,7 @@ env/
 # Results and generated artifacts
 results/*
 !results/.gitkeep
+!results/README.md
 !results/metrics/
 results/metrics/*
 !results/metrics/.gitkeep
@@ -26,6 +27,15 @@ results/logs/*
 !results/benchmarks/
 results/benchmarks/*
 !results/benchmarks/.gitkeep
+!results/tables/
+results/tables/*
+!results/tables/.gitkeep
+!results/tables/*.csv
+!results/tables/*.md
+!results/figures/
+results/figures/*
+!results/figures/.gitkeep
+!results/figures/*.png
 !results/checkpoints/
 results/checkpoints/*
 !results/checkpoints/.gitkeep
@@ -119,6 +129,7 @@ runs/
 *.pt
 *.pth
 *.safetensors
+*.bin
 
 # Weights & Biases
 wandb/

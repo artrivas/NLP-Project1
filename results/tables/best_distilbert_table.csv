@@ -1,0 +1,4 @@
+dataset,best_config,accuracy,precision_macro,recall_macro,f1_macro,total_params,trainable_params,gpu_memory_peak_mb,latency_ms_per_sample
+ag_news,freeze_lower_layers,0.75,0.375,0.5,0.4285714285714285,66560772,21461508,,109.25
+sst2,freeze_lower_layers,1.0,1.0,1.0,1.0,66560258,21460994,,101.875
+yelp_review_full,small_classifier,0.25,0.5,0.125,0.2,66461957,66461957,,116.325
