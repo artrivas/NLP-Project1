@@ -1,0 +1,8 @@
+dataset_name: glue
+dataset_config: sst2
+text_column: sentence
+label_column: label
+num_labels: 2
+max_length: 128
+train_split: train
+eval_split: validation

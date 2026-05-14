@@ -1,0 +1,7 @@
+dataset_name: yelp_review_full
+text_column: text
+label_column: label
+num_labels: 5
+max_length: 128
+train_split: train
+eval_split: test

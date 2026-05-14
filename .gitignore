@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Results and generated artifacts
+results/*
+!results/.gitkeep
+experiments/*
+!experiments/.gitkeep
+
+# Model checkpoints and training outputs
+checkpoints/
+checkpoint-*/
+models/
+outputs/
+runs/
+*.ckpt
+*.pt
+*.pth
+*.safetensors
+
+# Weights & Biases
+wandb/
+
+# Caches
+.cache/
+cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.huggingface/
+hf_cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
