@@ -1,0 +1,26 @@
+baseline:
+  freeze_mode: none
+  classifier_hidden_sizes: []
+  dropout: 0.2
+
+frozen_transformer:
+  freeze_mode: all
+  classifier_hidden_sizes: []
+  dropout: 0.2
+
+small_classifier:
+  freeze_mode: none
+  classifier_hidden_sizes: [128]
+  dropout: 0.2
+
+large_classifier:
+  freeze_mode: none
+  classifier_hidden_sizes: [512, 256]
+  dropout: 0.3
+
+freeze_lower_layers:
+  freeze_mode: lower_layers
+  num_frozen_layers: 3
+  freeze_embeddings: true
+  classifier_hidden_sizes: [256]
+  dropout: 0.2

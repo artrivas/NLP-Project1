@@ -96,3 +96,56 @@ results/
 The consolidated metrics CSV is appended to on each run. The training log CSV stores Trainer log history, including training loss and evaluation loss entries.
 
 Day 3 next step: compare the best DistilBERT baseline configuration against BERT-base. Do not run that comparison as part of Day 2.
+
+## Day 3 DistilBERT Ablation Study
+
+Day 3 trains DistilBERT-only classifier variants. It does not implement BERT comparison.
+
+Ablation configurations:
+
+- `baseline`: fully trainable DistilBERT with the standard simple classifier head.
+- `frozen_transformer`: frozen DistilBERT transformer, train classifier only.
+- `small_classifier`: fully trainable DistilBERT with `768 -> 128 -> num_labels`.
+- `large_classifier`: fully trainable DistilBERT with `768 -> 512 -> 256 -> num_labels`.
+- `freeze_lower_layers`: freeze embeddings and the first 3 DistilBERT layers, train upper layers with `768 -> 256 -> num_labels`.
+
+Run one dataset in debug-fast mode:
+
+```bash
+python -m src.ablation --dataset-config config/sst2.yaml --ablation-config config/ablation_distilbert.yaml --debug-fast
+```
+
+Run one ablation configuration only:
+
+```bash
+python -m src.ablation --dataset-config config/sst2.yaml --ablation-config config/ablation_distilbert.yaml --config-name frozen_transformer --debug-fast
+```
+
+Run all ablations across all datasets:
+
+```bash
+python -m src.run_ablation_all --debug-fast
+python -m src.run_ablation_all --full-run
+```
+
+Select the best DistilBERT ablation per dataset:
+
+```bash
+python -m src.select_best_ablation
+```
+
+Generated Day 3 files:
+
+```text
+results/
+├── metrics/
+│   ├── distilbert_ablation_metrics.csv
+│   └── best_distilbert_ablation.csv
+├── logs/
+│   └── distilbert_ablation_training_logs.csv
+└── checkpoints/
+    └── distilbert_ablation/
+        ├── ag_news/
+        ├── sst2/
+        └── yelp_review_full/
+```
