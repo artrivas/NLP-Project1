@@ -265,3 +265,36 @@ Figure guide:
 Debug-fast outputs are useful for checking that the reporting pipeline works, but they are not valid evidence for final conclusions. Use full-run outputs from the RTX 4090 for the final report.
 
 Commit generated summary artifacts such as `results/tables/*.csv`, `results/tables/*.md`, `results/figures/*.png`, and `results/README.md`. Do not commit large checkpoints, raw Trainer checkpoint directories, model weight files, caches, or W&B logs.
+
+## Day 6 NeurIPS-Style Mini Report
+
+Day 6 creates the LaTeX report structure and report assets. It does not train models, load checkpoints, or run GPU computation.
+
+Build report assets from the Day 5 tables and figures:
+
+```bash
+python -m src.build_report_assets
+```
+
+This copies selected figures into `report/figures/` and exports compact LaTeX snippets into `report/tables/`.
+
+Compile the report:
+
+```bash
+cd report
+make pdf
+```
+
+The PDF is written to:
+
+```text
+report/main.pdf
+```
+
+The report uses the official NeurIPS 2025 style file, `report/neurips_2025.sty`, from:
+
+```text
+https://media.neurips.cc/Conferences/NeurIPS2025/Styles.zip
+```
+
+If the style file is missing, download the zip, extract `neurips_2025.sty`, and place it directly in `report/`. Final report numbers should come from full-run experiments, not debug-fast runs.
