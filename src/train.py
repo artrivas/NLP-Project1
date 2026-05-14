@@ -1,4 +1,4 @@
-"""CLI for DistilBERT baseline fine-tuning."""
+"""CLI for BERT-family baseline fine-tuning."""
 
 from __future__ import annotations
 
@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_TRAINING_CONFIG = "config/training/default_distilbert.yaml"
 DEFAULT_OUTPUT_DIR = "results"
-DEBUG_MAX_TRAIN_SAMPLES = 32
-DEBUG_MAX_EVAL_SAMPLES = 16
-DEBUG_MAX_STEPS = 2
+DEBUG_MAX_TRAIN_SAMPLES = 8
+DEBUG_MAX_EVAL_SAMPLES = 4
+DEBUG_MAX_STEPS = 1
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -84,10 +84,16 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
                 "eval_steps": 1,
                 "save_steps": 1,
                 "save_total_limit": 1,
+                "eval_strategy": "no",
+                "save_strategy": "no",
+                "load_best_model_at_end": False,
             }
         )
     else:
         run_config["max_steps"] = -1
+        run_config["eval_strategy"] = "steps"
+        run_config["save_strategy"] = "steps"
+        run_config["load_best_model_at_end"] = True
 
     override_map = {
         "max_train_samples": args.max_train_samples,
@@ -111,13 +117,22 @@ def build_run_config(args: argparse.Namespace) -> dict[str, Any]:
     return run_config
 
 
-def ensure_output_dirs(base_output_dir: str, dataset_name: str) -> dict[str, Path]:
+def model_family(model_name: str) -> str:
+    """Return a stable model family identifier for output organization."""
+    if "distilbert" in model_name:
+        return "distilbert"
+    if "bert" in model_name:
+        return "bert"
+    return model_name.replace("/", "_").replace("-", "_")
+
+
+def ensure_output_dirs(base_output_dir: str, dataset_name: str, family: str = "distilbert") -> dict[str, Path]:
     """Create and return standard output directories for a training run."""
     base = Path(base_output_dir)
     dirs = {
         "metrics": base / "metrics",
         "logs": base / "logs",
-        "checkpoint": base / "checkpoints" / "distilbert" / dataset_name,
+        "checkpoint": base / "checkpoints" / family / dataset_name,
     }
     for directory in dirs.values():
         directory.mkdir(parents=True, exist_ok=True)
@@ -149,7 +164,7 @@ def write_training_logs(
 
 
 def train_distilbert(args: argparse.Namespace) -> dict[str, Any]:
-    """Run one DistilBERT fine-tuning job and persist metrics, logs, and checkpoints."""
+    """Run one BERT-family fine-tuning job and persist metrics, logs, and checkpoints."""
     run_config = build_run_config(args)
     set_seed(int(run_config["seed"]))
     log_gpu_info()
@@ -164,7 +179,8 @@ def train_distilbert(args: argparse.Namespace) -> dict[str, Any]:
         max_eval_samples=run_config.get("max_eval_samples"),
     )
     dataset_name = dataset_run_name(dataset_config)
-    output_dirs = ensure_output_dirs(run_config["output_dir"], dataset_name)
+    family = model_family(run_config["model_name"])
+    output_dirs = ensure_output_dirs(run_config["output_dir"], dataset_name, family)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
     model = AutoModelForSequenceClassification.from_pretrained(
@@ -174,7 +190,7 @@ def train_distilbert(args: argparse.Namespace) -> dict[str, Any]:
 
     training_args = TrainingArguments(
         output_dir=str(output_dirs["checkpoint"]),
-        run_name=f"distilbert-{dataset_name}-{run_config['execution_mode']}-{run_id}",
+        run_name=f"{family}-{dataset_name}-{run_config['execution_mode']}-{run_id}",
         do_train=True,
         do_eval=True,
         per_device_train_batch_size=int(run_config["train_batch_size"]),
@@ -188,12 +204,12 @@ def train_distilbert(args: argparse.Namespace) -> dict[str, Any]:
         logging_strategy="steps",
         logging_steps=int(run_config["logging_steps"]),
         logging_first_step=True,
-        eval_strategy="steps",
+        eval_strategy=str(run_config.get("eval_strategy", "steps")),
         eval_steps=int(run_config["eval_steps"]),
-        save_strategy="steps",
+        save_strategy=str(run_config.get("save_strategy", "steps")),
         save_steps=int(run_config["save_steps"]),
         save_total_limit=int(run_config.get("save_total_limit", 2)),
-        load_best_model_at_end=True,
+        load_best_model_at_end=bool(run_config.get("load_best_model_at_end", True)),
         metric_for_best_model=str(run_config.get("metric_for_best_model", "f1_macro")),
         greater_is_better=True,
         fp16=bool(run_config.get("fp16", False)),
@@ -213,8 +229,9 @@ def train_distilbert(args: argparse.Namespace) -> dict[str, Any]:
     )
 
     logger.info(
-        "Starting %s DistilBERT run for %s: train=%s eval=%s",
+        "Starting %s %s run for %s: train=%s eval=%s",
         run_config["execution_mode"],
+        family,
         dataset_name,
         len(train_dataset),
         len(eval_dataset),
@@ -252,6 +269,7 @@ def train_distilbert(args: argparse.Namespace) -> dict[str, Any]:
         "cuda_available": torch.cuda.is_available(),
         "gpu_name": get_gpu_name(),
         "peak_cuda_memory_mb": peak_memory_mb,
+        "model_type": family,
     }
 
     metrics_row = {
@@ -259,16 +277,20 @@ def train_distilbert(args: argparse.Namespace) -> dict[str, Any]:
         "train_loss": train_result.training_loss,
         **eval_metrics,
     }
-    metrics_csv = output_dirs["metrics"] / "distilbert_baseline_metrics.csv"
-    logs_csv = output_dirs["logs"] / "distilbert_baseline_training_logs.csv"
+    if family == "bert":
+        metrics_csv = output_dirs["metrics"] / "bert_metrics.csv"
+        logs_csv = output_dirs["logs"] / "bert_training_logs.csv"
+    else:
+        metrics_csv = output_dirs["metrics"] / "distilbert_baseline_metrics.csv"
+        logs_csv = output_dirs["logs"] / "distilbert_baseline_training_logs.csv"
     append_csv(metrics_row, metrics_csv)
     write_training_logs(trainer.state.log_history, logs_csv, common_metadata)
 
-    metrics_json = output_dirs["metrics"] / f"distilbert_{dataset_name}_{run_config['execution_mode']}_{run_id}.json"
+    metrics_json = output_dirs["metrics"] / f"{family}_{dataset_name}_{run_config['execution_mode']}_{run_id}.json"
     with metrics_json.open("w", encoding="utf-8") as file:
         json.dump(metrics_row, file, indent=2)
 
-    print("\nDistilBERT baseline run complete")
+    print(f"\n{family} baseline run complete")
     print(f"Dataset: {dataset_name}")
     print(f"Mode: {run_config['execution_mode']}")
     print(f"Train size: {len(train_dataset)}")

@@ -149,3 +149,59 @@ results/
         ├── sst2/
         └── yelp_review_full/
 ```
+
+## Day 4 Final Comparison
+
+Day 4 compares the best DistilBERT ablation configuration against `bert-base-uncased`. The best DistilBERT configuration is read from:
+
+```text
+results/metrics/best_distilbert_ablation.csv
+```
+
+Run BERT debug-fast training:
+
+```bash
+python -m src.train --config config/sst2.yaml --model bert-base-uncased --debug-fast
+```
+
+Run BERT full training:
+
+```bash
+python -m src.train --config config/ag_news.yaml --model bert-base-uncased --full-run
+python -m src.train --config config/sst2.yaml --model bert-base-uncased --full-run
+python -m src.train --config config/yelp_review_full.yaml --model bert-base-uncased --full-run
+```
+
+Run the final comparison:
+
+```bash
+python -m src.final_comparison --debug-fast
+python -m src.final_comparison --full-run
+```
+
+Benchmark a trained checkpoint:
+
+```bash
+python -m src.benchmark --config config/sst2.yaml --model-path results/checkpoints/bert/sst2/best_model --model-name bert-base-uncased --debug-fast
+```
+
+Generated Day 4 files:
+
+```text
+results/
+├── metrics/
+│   ├── bert_metrics.csv
+│   ├── final_comparison_metrics.csv
+│   └── final_efficiency_metrics.csv
+├── logs/
+│   └── bert_training_logs.csv
+├── benchmarks/
+│   └── benchmark_results.csv
+└── checkpoints/
+    └── bert/
+        ├── ag_news/
+        ├── sst2/
+        └── yelp_review_full/
+```
+
+Debug-fast results are only for verifying code correctness. Trust the final comparison only after running full-run experiments on the target RTX 4090.
