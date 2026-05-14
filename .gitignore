@@ -17,6 +17,26 @@ env/
 # Results and generated artifacts
 results/*
 !results/.gitkeep
+!results/metrics/
+results/metrics/*
+!results/metrics/.gitkeep
+!results/logs/
+results/logs/*
+!results/logs/.gitkeep
+!results/checkpoints/
+results/checkpoints/*
+!results/checkpoints/.gitkeep
+!results/checkpoints/distilbert/
+results/checkpoints/distilbert/*
+!results/checkpoints/distilbert/ag_news/
+!results/checkpoints/distilbert/sst2/
+!results/checkpoints/distilbert/yelp_review_full/
+results/checkpoints/distilbert/ag_news/*
+results/checkpoints/distilbert/sst2/*
+results/checkpoints/distilbert/yelp_review_full/*
+!results/checkpoints/distilbert/ag_news/.gitkeep
+!results/checkpoints/distilbert/sst2/.gitkeep
+!results/checkpoints/distilbert/yelp_review_full/.gitkeep
 experiments/*
 !experiments/.gitkeep
 

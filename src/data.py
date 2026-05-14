@@ -78,6 +78,32 @@ def load_dataset_from_config(config: dict[str, Any]) -> DatasetDict:
     return dataset
 
 
+def load_dataset_split_from_config(
+    config: dict[str, Any],
+    split: str,
+    max_samples: int | None = None,
+) -> Dataset:
+    """Load one Hugging Face dataset split, optionally using split slicing."""
+    validate_config(config)
+    dataset_name = config["dataset_name"]
+    dataset_config = config.get("dataset_config")
+    split_expression = split if max_samples is None else f"{split}[:{max_samples}]"
+
+    try:
+        if dataset_config:
+            return load_dataset(dataset_name, dataset_config, split=split_expression)
+        return load_dataset(dataset_name, split=split_expression)
+    except Exception as exc:
+        message = (
+            f"Failed to load dataset '{dataset_name}' split '{split_expression}'"
+            f"{f' with config {dataset_config!r}' if dataset_config else ''}. "
+            "Check the dataset name, dataset config, split name, network access, "
+            f"and installed 'datasets' version. Original error: {exc}"
+        )
+        logger.error(message)
+        raise RuntimeError(message) from exc
+
+
 def get_tokenizer(model_name: str) -> PreTrainedTokenizerBase:
     """Load a tokenizer from Hugging Face Transformers."""
     try:
@@ -127,16 +153,33 @@ def tokenize_dataset(
 def prepare_dataset(
     config_path: str,
     model_name: str = "distilbert-base-uncased",
+    max_train_samples: int | None = None,
+    max_eval_samples: int | None = None,
 ) -> tuple[Dataset, Dataset, PreTrainedTokenizerBase, dict[str, Any]]:
     """Load, tokenize, label-normalize, and format train/eval datasets for PyTorch."""
     config = load_yaml_config(config_path)
     validate_config(config)
 
-    raw_dataset = load_dataset_from_config(config)
     tokenizer = get_tokenizer(model_name)
 
-    train_dataset = tokenize_dataset(raw_dataset[config["train_split"]], tokenizer, config)
-    eval_dataset = tokenize_dataset(raw_dataset[config["eval_split"]], tokenizer, config)
+    if max_train_samples is not None or max_eval_samples is not None:
+        raw_train_dataset = load_dataset_split_from_config(
+            config,
+            config["train_split"],
+            max_train_samples,
+        )
+        raw_eval_dataset = load_dataset_split_from_config(
+            config,
+            config["eval_split"],
+            max_eval_samples,
+        )
+    else:
+        raw_dataset = load_dataset_from_config(config)
+        raw_train_dataset = raw_dataset[config["train_split"]]
+        raw_eval_dataset = raw_dataset[config["eval_split"]]
+
+    train_dataset = tokenize_dataset(raw_train_dataset, tokenizer, config)
+    eval_dataset = tokenize_dataset(raw_eval_dataset, tokenizer, config)
 
     label_column = config["label_column"]
     if label_column not in train_dataset.column_names:
