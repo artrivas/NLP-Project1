@@ -66,6 +66,21 @@ def latest_distilbert_metric(ablation_metrics_path: str, dataset: str, config_na
     return subset.sort_values("timestamp_utc").iloc[-1].to_dict()
 
 
+def latest_bert_metric(output_dir: str, dataset: str) -> dict[str, Any]:
+    """Return the latest matching BERT metrics row when available."""
+    path = Path(output_dir) / "metrics" / "bert_metrics.csv"
+    if not path.exists():
+        return {}
+    frame = pd.read_csv(path)
+    if "dataset_run_name" not in frame.columns:
+        return {}
+    subset = frame[frame["dataset_run_name"] == dataset]
+    if subset.empty:
+        return {}
+    sort_col = "timestamp_utc" if "timestamp_utc" in subset.columns else "run_id"
+    return subset.sort_values(sort_col).iloc[-1].to_dict()
+
+
 def metric_value(row: dict[str, Any], name: str) -> Any:
     """Read a metric from either unprefixed or Trainer-prefixed columns."""
     return row.get(name, row.get(f"eval_{name}"))
@@ -183,8 +198,11 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
         )
 
-        bert_metrics = train_bert_for_dataset(args, DATASET_CONFIGS[dataset])
         bert_checkpoint = Path(args.output_dir) / "checkpoints" / "bert" / dataset / "best_model"
+        bert_metrics = latest_bert_metric(args.output_dir, dataset)
+        if not bert_metrics or not bert_checkpoint.exists():
+            bert_metrics = train_bert_for_dataset(args, DATASET_CONFIGS[dataset])
+            bert_checkpoint = Path(args.output_dir) / "checkpoints" / "bert" / dataset / "best_model"
         benchmark = benchmark_checkpoint(
             config_path=DATASET_CONFIGS[dataset],
             model_path=str(bert_checkpoint),

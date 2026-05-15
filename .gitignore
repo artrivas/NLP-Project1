@@ -119,6 +119,14 @@ results/checkpoints/distilbert_ablation/yelp_review_full/freeze_lower_layers/*
 experiments/*
 !experiments/.gitkeep
 
+# Generated figures (top-level)
+figures/
+
+# Metrics CSVs we want to track
+!results/metrics/*.csv
+!results/metrics/*.md
+!results/benchmarks/*.csv
+
 # Model checkpoints and training outputs
 /checkpoints/
 /checkpoint-*/
