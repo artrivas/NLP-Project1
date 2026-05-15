@@ -62,7 +62,6 @@ push_code() {
         --exclude='results/figures/' \
         --exclude='results/logs/' \
         --exclude='results/benchmarks/' \
-        --exclude='figures/' \
         --exclude='*.pyc' \
         --exclude='.DS_Store' \
         --exclude='results/metrics/*.json' \
@@ -174,8 +173,7 @@ pull_results() {
              "${PROJECT_DIR}/results/tables" \
              "${PROJECT_DIR}/results/figures" \
              "${PROJECT_DIR}/results/logs" \
-             "${PROJECT_DIR}/results/benchmarks" \
-             "${PROJECT_DIR}/figures"
+             "${PROJECT_DIR}/results/benchmarks"
 
     LOCAL_DIRS=(
         "results/metrics"
@@ -183,7 +181,6 @@ pull_results() {
         "results/figures"
         "results/logs"
         "results/benchmarks"
-        "figures"
     )
 
     pulled=0
@@ -202,10 +199,8 @@ pull_results() {
     echo ""
     ok "Results pulled ($pulled directories synced)"
     echo ""
-    echo "  Regenerate local output:"
-    echo "    python -m src.make_results_summary"
-    echo "    python -m src.build_report_assets"
-    echo "    python -m src.visualize --results-dir results --figures-dir figures"
+    echo "  Regenerate local output from the pulled data:"
+    echo "    cd $PROJECT_DIR && uv sync && uv run python -m src.visualize --results-dir results --figures-dir results/figures"
     echo ""
 }
 

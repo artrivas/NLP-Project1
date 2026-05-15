@@ -790,7 +790,7 @@ def plot_summary_table(perf: pd.DataFrame, eff: pd.DataFrame, out: Path) -> list
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate comprehensive experiment visualizations.")
     parser.add_argument("--results-dir", default="results")
-    parser.add_argument("--figures-dir", default="figures")
+    parser.add_argument("--figures-dir", default="results/figures")
     args = parser.parse_args()
 
     results = Path(args.results_dir)

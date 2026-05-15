@@ -395,7 +395,7 @@ python -m src.build_report_assets 2>&1 | tee "$LOG_DIR/build_report_assets.log" 
 progress "Extended visualizations"
 python -m src.visualize \
     --results-dir results \
-    --figures-dir figures \
+    --figures-dir results/figures \
     2>&1 | tee "$LOG_DIR/visualize.log" || fail "Extended visualization had errors"
 
 # ──────────────────────────────────────────────
