@@ -166,3 +166,5 @@ report/*.out
 report/*.synctex.gz
 report/*.toc
 uv.lock
+
+.claude/
