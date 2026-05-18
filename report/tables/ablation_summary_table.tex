@@ -1,0 +1,18 @@
+\begin{tabular}{lllrrrrrr}
+\toprule
+Dataset & Config & Freeze & Head & Acc. & F1 & Params (M) & Trainable (M) & Latency \\
+\midrule
+ag\_news & baseline & none & [] & 0.9432 & 0.9432 & 66.96 & 66.96 & 0.18 \\
+ag\_news & small\_classifier & none & [128] & 0.9412 & 0.9411 & 66.46 & 66.46 & 0.19 \\
+ag\_news & large\_classifier & none & [512, 256] & 0.9393 & 0.9394 & 66.89 & 66.89 & 0.19 \\
+ag\_news & freeze\_lower\_layers & lower\_layers & [256] & 0.9366 & 0.9366 & 66.56 & 21.46 & 0.18 \\
+sst2 & large\_classifier & none & [512, 256] & 0.9106 & 0.9105 & 66.89 & 66.89 & 0.18 \\
+sst2 & small\_classifier & none & [128] & 0.9106 & 0.9105 & 66.46 & 66.46 & 0.18 \\
+sst2 & baseline & none & [] & 0.9106 & 0.9105 & 66.96 & 66.96 & 0.18 \\
+sst2 & freeze\_lower\_layers & lower\_layers & [256] & 0.8784 & 0.8779 & 66.56 & 21.46 & 0.18 \\
+yelp\_review\_full & baseline & none & [] & 0.6503 & 0.6502 & 66.96 & 66.96 & 0.18 \\
+yelp\_review\_full & small\_classifier & none & [128] & 0.6478 & 0.6479 & 66.46 & 66.46 & 0.18 \\
+yelp\_review\_full & large\_classifier & none & [512, 256] & 0.6442 & 0.6446 & 66.89 & 66.89 & 0.18 \\
+yelp\_review\_full & freeze\_lower\_layers & lower\_layers & [256] & 0.6352 & 0.6347 & 66.56 & 21.46 & 0.19 \\
+\bottomrule
+\end{tabular}

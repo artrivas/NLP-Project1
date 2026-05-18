@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -f main.aux main.bbl main.blg main.fdb_latexmk main.fls main.log main.out main.pdf)",
+      "Bash(make pdf *)",
+      "Bash(rm -f main.aux main.bbl main.blg main.fdb_latexmk main.fls main.log main.out main.pdf && make pdf 2>&1 | grep \"Output written\" )",
+      "Bash(pdfinfo main.pdf)",
+      "Bash(rm -f main.aux main.bbl main.blg main.fdb_latexmk main.fls main.log main.out main.pdf && make pdf 2>&1 | grep \"Output written\" | tail -1 && pdfinfo main.pdf | grep Pages)"
+    ]
+  }
+}

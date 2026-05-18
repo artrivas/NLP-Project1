@@ -1,0 +1,123 @@
+\documentclass{article}
+
+\usepackage[preprint]{neurips_2025}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{microtype}
+\usepackage{xcolor}
+
+\title{DistilBERT vs. BERT for Efficient Text Classification}
+
+\author{%
+  Arturo Rivas\\
+  NLP Text Classification Project\\
+  \texttt{TODO: add institutional email if needed}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We study the accuracy-efficiency trade-off between DistilBERT and BERT-base for text classification on AG News, SST-2, and Yelp Review Full. We fine-tune DistilBERT, conduct a DistilBERT-only ablation study over five classifier-head and layer-freezing configurations, select the best configuration per dataset using macro F1 as the primary criterion, and compare it against BERT-base. BERT-base outperforms the best DistilBERT configuration by 0.7–1.0\% in accuracy and macro F1 across all three datasets. In return, DistilBERT offers approximately $2\times$ lower inference latency, 39\% fewer parameters, and 29\% lower peak GPU memory at inference, making it a compelling choice for latency-sensitive deployment.
+\end{abstract}
+
+\section{Introduction}
+Text classification is a core natural language processing task with applications in topic labeling, sentiment analysis, and review understanding. Transformer encoders such as BERT provide strong transfer learning performance via deep bidirectional pretraining \citep{devlin2019bert}. However, BERT-base is comparatively expensive in parameter count, memory, and inference latency, which can be limiting at deployment time.
+
+DistilBERT is a compressed Transformer trained by knowledge distillation to retain much of BERT's language understanding with fewer parameters and faster inference \citep{sanh2019distilbert}. This project asks whether DistilBERT can offer a favorable accuracy-efficiency trade-off against BERT-base on three classification benchmarks: AG News (4-class topic), SST-2 from GLUE (binary sentiment), and Yelp Review Full (5-class rating prediction) \citep{zhang2015character,wang2018glue}.
+
+The contributions are: (1) a reproducible fine-tuning pipeline for DistilBERT and BERT-base; (2) a five-configuration DistilBERT ablation over classifier size and freezing strategies; (3) a final comparison of the selected DistilBERT configuration per dataset against BERT-base; and (4) a quantitative analysis of performance and efficiency metrics.
+
+\section{Approach}
+All datasets are tokenized with the corresponding Hugging Face tokenizer and padded or truncated to a maximum of 128 tokens. Fine-tuning uses AdamW with learning rate $2\times10^{-5}$, weight decay 0.01, and 3 epochs. The training objective is cross-entropy over dataset labels.
+
+For DistilBERT, the \emph{baseline} configuration keeps the full Transformer encoder trainable with the standard classification head. The ablation additionally evaluates: \emph{frozen\_transformer} (encoder frozen, only classification head trained), \emph{small\_classifier} (fully trainable, 768$\to$128 head), \emph{large\_classifier} (fully trainable, 768$\to$512$\to$256 head), and \emph{freeze\_lower\_layers} (embeddings and first three Transformer layers frozen, 768$\to$256 head). BERT-base uses \texttt{bert-base-uncased} with a comparable single-layer classification head.
+
+The best DistilBERT configuration per dataset is selected from the ablation using macro F1 as the primary criterion; latency and trainable parameter count serve as tiebreakers. Models are evaluated on accuracy, macro and weighted precision/recall/F1. Efficiency is measured at inference with batch size 32, using \texttt{torch.cuda.reset\_peak\_memory\_stats} before each run to avoid cross-model memory contamination.
+
+\section{Experiments}
+The datasets cover topic classification (AG News, 4 classes, 120k train / 7.6k test), binary sentiment (SST-2, 67k train / 872 validation), and five-class review rating prediction (Yelp Review Full, 650k train / 50k test). Full-run experiments used an NVIDIA GeForce RTX 5090 with mixed-precision (FP16) enabled.
+
+The implementation uses PyTorch, Hugging Face Transformers, and Hugging Face Datasets \citep{paszke2019pytorch,wolf2020transformers,lhoest2021datasets}. Table~\ref{tab:ablation} reports the top four DistilBERT configurations per dataset (the \emph{frozen\_transformer} results are summarized in the ablation analysis). Table~\ref{tab:best-distilbert} reports the selected best configuration per dataset from the ablation study (training batch size 32). Table~\ref{tab:performance} reports final performance from the held-out comparison run (training batch size 128), and Table~\ref{tab:efficiency} reports inference efficiency.
+
+\section{Analysis}
+
+\begin{table}[t]
+\centering
+\caption{Final performance comparison (training batch size 128). All metrics are reported on the test or validation split.}
+\label{tab:performance}
+\resizebox{\linewidth}{!}{\input{tables/final_performance_table.tex}}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Inference efficiency. Latency is in ms/sample; parameter counts are in millions. GPU memory is peak allocated memory at inference (batch size 32, FP16, same hardware for all models).}
+\label{tab:efficiency}
+\resizebox{\linewidth}{!}{\input{tables/final_efficiency_table.tex}}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.78\linewidth]{figures/bubble_params_accuracy_combined.png}
+\caption{Accuracy versus parameter count across all models and datasets. Bubble size encodes inference latency (larger = slower).}
+\label{fig:bubble}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\linewidth]{figures/f1_comparison_by_dataset.png}
+\includegraphics[width=0.48\linewidth]{figures/latency_comparison_by_dataset.png}
+\caption{Macro F1 (left) and inference latency (right) by dataset for the final comparison models.}
+\label{fig:f1-latency}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.32\linewidth]{figures/loss_curves_ag_news.png}
+\includegraphics[width=0.32\linewidth]{figures/loss_curves_sst2.png}
+\includegraphics[width=0.32\linewidth]{figures/loss_curves_yelp_review_full.png}
+\caption{Training and validation loss curves for the final comparison runs (DistilBERT best config and BERT-base).}
+\label{fig:loss}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{DistilBERT ablation results (training batch size 128). Top 4 of 5 configurations shown per dataset, sorted by macro F1 descending (frozen\_transformer excluded; see text for results). Latency is Trainer evaluation throughput in ms/sample.}
+\label{tab:ablation}
+\resizebox{\linewidth}{!}{\input{tables/ablation_summary_table.tex}}
+\end{table}
+
+\begin{table}[!b]
+\centering
+\caption{Selected best DistilBERT configuration per dataset. Selection used macro F1 as the primary criterion, with latency and trainable parameter count as tiebreakers. Metrics are from the ablation study (training batch size 32).}
+\label{tab:best-distilbert}
+\resizebox{\linewidth}{!}{\input{tables/best_distilbert_table.tex}}
+\end{table}
+
+\paragraph{Performance.}
+As shown in Table~\ref{tab:performance}, BERT-base consistently outperforms the selected DistilBERT configuration across all three datasets. The accuracy gap is 0.69\% on AG News (0.9462 vs.\ 0.9393), 1.03\% on SST-2 (0.9209 vs.\ 0.9106), and 0.74\% on Yelp Review Full (0.6576 vs.\ 0.6503). Macro F1 follows the same pattern. Both models perform best on the structured topic classification task (AG News) and struggle most on the fine-grained rating task (Yelp Review Full), consistent with the inherent difficulty of distinguishing adjacent star ratings.
+
+\paragraph{Ablation.}
+The \emph{frozen\_transformer} configuration degrades substantially (macro F1 0.88 on AG News, 0.80 on SST-2, 0.51 on Yelp), confirming that task-specific fine-tuning of the Transformer encoder is essential. The \emph{freeze\_lower\_layers} strategy reduces trainable parameters by approximately 68\% (from 66.96M to 21.46M) at a modest accuracy cost (0.6\% on AG News, 0.3\% on SST-2, 1.5\% on Yelp). The selection run (Table~\ref{tab:best-distilbert}, batch size 32) chooses \emph{large\_classifier} for AG News and SST-2 and \emph{baseline} for Yelp. In the batch-size-128 summary (Table~\ref{tab:ablation}) the AG News ranking shifts and \emph{baseline} obtains the highest macro F1, indicating that classifier-head ranking is somewhat sensitive to training batch size; the final comparison in Table~\ref{tab:performance} consistently uses the selected configurations.
+
+\paragraph{Efficiency.}
+Table~\ref{tab:efficiency} shows that DistilBERT uses 66.9M parameters versus BERT's 109.5M (39\% reduction), achieves $\approx$0.32 ms/sample inference latency versus $\approx$0.64--0.66 ms/sample for BERT (approximately $2\times$ speedup), and requires $\approx$397 MB peak GPU memory versus $\approx$559 MB for BERT (29\% reduction). These gains hold consistently across all three datasets since both models share the same batch size and sequence length at inference.
+
+\paragraph{Trade-off analysis.}
+DistilBERT was pretrained by knowledge distillation from BERT, preserving much of its language understanding in a 40\%-smaller model with half the Transformer layers \citep{sanh2019distilbert}. The experimental results confirm this: DistilBERT recovers approximately 99\% of BERT's accuracy while offering a $2\times$ latency reduction. In accuracy-critical settings where even sub-1\% gains matter, BERT-base is preferable. In throughput- or memory-constrained deployment---such as real-time inference, edge devices, or large-scale batch processing---DistilBERT provides a superior efficiency-to-accuracy trade-off.
+
+\section{Conclusion}
+BERT-base achieves higher accuracy and macro F1 than the best DistilBERT configuration on all three datasets, with margins of 0.7--1.0\%. The selected DistilBERT configurations are \emph{large\_classifier} for AG News and SST-2, and \emph{baseline} for Yelp Review Full, chosen by macro F1 from the ablation study. Despite the accuracy gap, DistilBERT delivers approximately $2\times$ lower inference latency, 39\% fewer parameters, and 29\% lower peak GPU memory. For latency-sensitive or resource-constrained applications, DistilBERT offers a compelling efficiency-accuracy trade-off. Limitations include the use of a single learning rate and fixed sequence length for all configurations, limited hyperparameter search, and evaluation on a single random seed. Future work could explore other compact encoders, multi-seed evaluation, and calibration analysis.
+
+\clearpage
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
